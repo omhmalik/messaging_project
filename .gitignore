@@ -1,0 +1,21 @@
+## .NET build artifacts
+bin/
+obj/
+
+## Visual Studio / Rider user files
+.vs/
+*.user
+*.suo
+.idea/
+
+## VS Code
+.vscode/
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Secrets (never commit real connection strings/keys)
+appsettings.Development.json
+appsettings.*.local.json
+*.env
