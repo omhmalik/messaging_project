@@ -5,4 +5,8 @@
     <Project Path="src/MessagingApp.Domain/MessagingApp.Domain.csproj" />
     <Project Path="src/MessagingApp.Infrastructure/MessagingApp.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MessagingApp.Application.Tests/MessagingApp.Application.Tests.csproj" />
+    <Project Path="tests/MessagingApp.Infrastructure.Tests/MessagingApp.Infrastructure.Tests.csproj" />
+  </Folder>
 </Solution>
