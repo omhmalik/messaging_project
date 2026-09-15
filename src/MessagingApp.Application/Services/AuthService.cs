@@ -1,4 +1,5 @@
 using MessagingApp.Application.DTOs;
+using MessagingApp.Application.Exceptions;
 using MessagingApp.Application.Interfaces;
 using MessagingApp.Domain.Entities;
 
@@ -21,12 +22,12 @@ public class AuthService : IAuthService
     {
         if (await _unitOfWork.Users.GetByEmailAsync(request.Email) is not null)
         {
-            throw new InvalidOperationException("Email is already registered.");
+            throw new ConflictException("Email is already registered.");
         }
 
         if (await _unitOfWork.Users.GetByUsernameAsync(request.Username) is not null)
         {
-            throw new InvalidOperationException("Username is already taken.");
+            throw new ConflictException("Username is already taken.");
         }
 
         var user = new User
@@ -50,7 +51,7 @@ public class AuthService : IAuthService
         var user = await _unitOfWork.Users.GetByEmailAsync(request.Email);
         if (user is null || !_passwordHasher.Verify(user.PasswordHash, request.Password))
         {
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new InvalidCredentialsException("Invalid email or password.");
         }
 
         var token = _tokenService.GenerateToken(user);
@@ -62,7 +63,7 @@ public class AuthService : IAuthService
     public async Task<UserResponse> GetCurrentUserAsync(Guid userId)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId)
-            ?? throw new InvalidOperationException("User not found.");
+            ?? throw new NotFoundException("User not found.");
 
         return new UserResponse(user.Id, user.DisplayName, user.Username, user.Email, user.ProfilePicturePath);
     }

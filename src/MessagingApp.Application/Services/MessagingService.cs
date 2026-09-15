@@ -1,4 +1,5 @@
 using MessagingApp.Application.DTOs;
+using MessagingApp.Application.Exceptions;
 using MessagingApp.Application.Interfaces;
 using MessagingApp.Domain.Entities;
 
@@ -27,12 +28,12 @@ public class MessagingService : IMessagingService
     {
         if (senderId == request.RecipientId)
         {
-            throw new InvalidOperationException("You cannot send a message to yourself.");
+            throw new BadRequestException("You cannot send a message to yourself.");
         }
 
         if (await _unitOfWork.Users.GetByIdAsync(request.RecipientId) is null)
         {
-            throw new InvalidOperationException("Recipient not found.");
+            throw new NotFoundException("Recipient not found.");
         }
 
         var conversation = await _unitOfWork.Conversations.GetDirectConversationAsync(senderId, request.RecipientId);
@@ -97,7 +98,7 @@ public class MessagingService : IMessagingService
     {
         if (!await _unitOfWork.Conversations.IsParticipantAsync(conversationId, userId))
         {
-            throw new UnauthorizedAccessException("You are not a participant of this conversation.");
+            throw new ForbiddenException("You are not a participant of this conversation.");
         }
 
         var messages = await _unitOfWork.Messages.GetMessagesAsync(conversationId, before, take);
