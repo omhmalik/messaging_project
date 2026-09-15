@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: messaging_app_postgres
+    environment:
+      POSTGRES_USER: messaging_user
+      POSTGRES_PASSWORD: messaging_password
+      POSTGRES_DB: messaging_app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
