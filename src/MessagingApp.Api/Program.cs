@@ -2,6 +2,7 @@ using System.Text;
 using MessagingApp.Api.ExceptionHandling;
 using MessagingApp.Api.Hubs;
 using MessagingApp.Api.Realtime;
+using MessagingApp.Api.Storage;
 using MessagingApp.Application.Interfaces;
 using MessagingApp.Application.Services;
 using MessagingApp.Infrastructure.Persistence;
@@ -63,6 +64,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
 builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
