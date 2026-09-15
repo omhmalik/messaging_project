@@ -1,10 +1,13 @@
 using System.Text;
 using MessagingApp.Api.ExceptionHandling;
+using MessagingApp.Api.Hubs;
+using MessagingApp.Api.Realtime;
 using MessagingApp.Application.Interfaces;
 using MessagingApp.Application.Services;
 using MessagingApp.Infrastructure.Persistence;
 using MessagingApp.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -59,6 +62,10 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasherService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
+builder.Services.AddScoped<IRealtimeNotifier, SignalRNotifier>();
+
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, JwtUserIdProvider>();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>()!;
 
@@ -76,6 +83,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key))
         };
+
+        // Browsers can't set an Authorization header on a WebSocket handshake, so SignalR
+        // sends the JWT as a query string parameter instead. This reads it back out for
+        // the hub path only, so REST endpoints still require the normal header.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs/chat"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -91,8 +116,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

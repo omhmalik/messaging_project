@@ -8,10 +8,12 @@ namespace MessagingApp.Application.Services;
 public class MessagingService : IMessagingService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IRealtimeNotifier _realtimeNotifier;
 
-    public MessagingService(IUnitOfWork unitOfWork)
+    public MessagingService(IUnitOfWork unitOfWork, IRealtimeNotifier realtimeNotifier)
     {
         _unitOfWork = unitOfWork;
+        _realtimeNotifier = realtimeNotifier;
     }
 
     public async Task<IReadOnlyList<UserResponse>> SearchUsersAsync(Guid currentUserId, string query)
@@ -66,7 +68,11 @@ public class MessagingService : IMessagingService
         await _unitOfWork.Messages.AddAsync(message);
         await _unitOfWork.SaveChangesAsync();
 
-        return new MessageResponse(message.Id, message.ConversationId, message.SenderId, message.Content, message.SentAt);
+        var response = new MessageResponse(message.Id, message.ConversationId, message.SenderId, message.Content, message.SentAt);
+
+        await _realtimeNotifier.NotifyNewMessageAsync(request.RecipientId, response);
+
+        return response;
     }
 
     public async Task<IReadOnlyList<ConversationSummaryResponse>> GetConversationsAsync(Guid userId, string? search)

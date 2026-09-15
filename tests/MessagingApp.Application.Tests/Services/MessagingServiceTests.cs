@@ -14,6 +14,7 @@ public class MessagingServiceTests
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IConversationRepository> _conversationRepositoryMock = new();
     private readonly Mock<IMessageRepository> _messageRepositoryMock = new();
+    private readonly Mock<IRealtimeNotifier> _realtimeNotifierMock = new();
     private readonly MessagingService _sut;
 
     public MessagingServiceTests()
@@ -21,7 +22,7 @@ public class MessagingServiceTests
         _unitOfWorkMock.Setup(u => u.Users).Returns(_userRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Conversations).Returns(_conversationRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Messages).Returns(_messageRepositoryMock.Object);
-        _sut = new MessagingService(_unitOfWorkMock.Object);
+        _sut = new MessagingService(_unitOfWorkMock.Object, _realtimeNotifierMock.Object);
     }
 
     [Fact]
@@ -57,6 +58,9 @@ public class MessagingServiceTests
         Assert.Equal("Hello", result.Content);
         _conversationRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Conversation>()), Times.Once);
         _messageRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Message>()), Times.Once);
+        _realtimeNotifierMock.Verify(
+            n => n.NotifyNewMessageAsync(recipientId, It.Is<MessageResponse>(m => m.Content == "Hello")),
+            Times.Once);
     }
 
     [Fact]
