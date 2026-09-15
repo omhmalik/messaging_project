@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,5 +22,15 @@
     <ProjectReference Include="..\MessagingApp.Application\MessagingApp.Application.csproj" />
     <ProjectReference Include="..\MessagingApp.Infrastructure\MessagingApp.Infrastructure.csproj" />
   </ItemGroup>
+
+  <!-- Swashbuckle only picks up XML doc comments from this project's own output.
+       This copies the Application project's generated XML doc file alongside it,
+       so Swagger can also show the summaries written on request/response DTOs. -->
+  <Target Name="CopyApplicationXmlDoc" AfterTargets="Build">
+    <ItemGroup>
+      <ApplicationXmlDoc Include="..\MessagingApp.Application\bin\$(Configuration)\$(TargetFramework)\MessagingApp.Application.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ApplicationXmlDoc)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('%(ApplicationXmlDoc.Identity)')" />
+  </Target>
 
 </Project>

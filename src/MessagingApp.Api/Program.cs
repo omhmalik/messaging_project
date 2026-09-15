@@ -17,6 +17,22 @@ builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Messaging App API",
+        Version = "v1",
+        Description = "REST API backing a 1:1 messaging application: registration/login (JWT), user search, conversations, and messages."
+    });
+
+    foreach (var xmlFile in new[] { "MessagingApp.Api.xml", "MessagingApp.Application.xml" })
+    {
+        var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+        if (File.Exists(xmlPath))
+        {
+            options.IncludeXmlComments(xmlPath);
+        }
+    }
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
