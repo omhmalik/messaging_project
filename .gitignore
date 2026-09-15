@@ -19,3 +19,6 @@ Thumbs.db
 appsettings.Development.json
 appsettings.*.local.json
 *.env
+
+## User-uploaded content (runtime data, not source)
+**/wwwroot/uploads/

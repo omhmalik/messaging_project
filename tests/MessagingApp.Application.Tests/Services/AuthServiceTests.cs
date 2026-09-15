@@ -14,12 +14,17 @@ public class AuthServiceTests
     private readonly Mock<IUserRepository> _userRepositoryMock = new();
     private readonly Mock<IPasswordHasher> _passwordHasherMock = new();
     private readonly Mock<ITokenService> _tokenServiceMock = new();
+    private readonly Mock<IFileStorageService> _fileStorageServiceMock = new();
     private readonly AuthService _sut;
 
     public AuthServiceTests()
     {
         _unitOfWorkMock.Setup(u => u.Users).Returns(_userRepositoryMock.Object);
-        _sut = new AuthService(_unitOfWorkMock.Object, _passwordHasherMock.Object, _tokenServiceMock.Object);
+        _sut = new AuthService(
+            _unitOfWorkMock.Object,
+            _passwordHasherMock.Object,
+            _tokenServiceMock.Object,
+            _fileStorageServiceMock.Object);
     }
 
     [Fact]
@@ -97,5 +102,66 @@ public class AuthServiceTests
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(
             () => _sut.LoginAsync(new LoginRequest("noone@example.com", "whatever")));
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_WithNoConflicts_UpdatesAndReturnsNewValues()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, DisplayName = "Old Name", Username = "old_username", Email = "old@example.com" };
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("new@example.com")).ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(r => r.GetByUsernameAsync("new_username")).ReturnsAsync((User?)null);
+
+        var result = await _sut.UpdateProfileAsync(userId, new UpdateProfileRequest("New Name", "new_username", "new@example.com"));
+
+        Assert.Equal("New Name", result.DisplayName);
+        Assert.Equal("new_username", result.Username);
+        Assert.Equal("new@example.com", result.Email);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_WhenNewEmailBelongsToAnotherUser_ThrowsConflictException()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, DisplayName = "Me", Username = "me", Email = "me@example.com" };
+        var otherUser = new User { Id = Guid.NewGuid(), Email = "taken@example.com" };
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("taken@example.com")).ReturnsAsync(otherUser);
+
+        await Assert.ThrowsAsync<ConflictException>(
+            () => _sut.UpdateProfileAsync(userId, new UpdateProfileRequest("Me", "me", "taken@example.com")));
+    }
+
+    [Fact]
+    public async Task UpdateProfileAsync_WhenKeepingOwnEmailAndUsername_DoesNotThrow()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, DisplayName = "Me", Username = "me", Email = "me@example.com" };
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetByEmailAsync("me@example.com")).ReturnsAsync(user);
+        _userRepositoryMock.Setup(r => r.GetByUsernameAsync("me")).ReturnsAsync(user);
+
+        var result = await _sut.UpdateProfileAsync(userId, new UpdateProfileRequest("Updated Name", "me", "me@example.com"));
+
+        Assert.Equal("Updated Name", result.DisplayName);
+    }
+
+    [Fact]
+    public async Task UpdateProfilePictureAsync_SavesFileAndUpdatesPath()
+    {
+        var userId = Guid.NewGuid();
+        var user = new User { Id = userId, DisplayName = "Me", Username = "me", Email = "me@example.com" };
+        using var content = new MemoryStream();
+        _userRepositoryMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(user);
+        _fileStorageServiceMock
+            .Setup(s => s.SaveProfilePictureAsync(userId, content, ".png"))
+            .ReturnsAsync("/uploads/profile-pictures/abc.png");
+
+        var result = await _sut.UpdateProfilePictureAsync(userId, content, ".png");
+
+        Assert.Equal("/uploads/profile-pictures/abc.png", result.ProfilePicturePath);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 }
