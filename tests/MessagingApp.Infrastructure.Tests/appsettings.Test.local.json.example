@@ -1,0 +1,6 @@
+{
+  "_comment": "Copy this file to appsettings.Test.local.json (which is gitignored) and fill in your local PostgreSQL credentials. A dedicated test database is recommended so tests never touch your development data.",
+  "ConnectionStrings": {
+    "TestConnection": "Host=localhost;Port=5432;Database=messaging_app_test_db;Username=postgres;Password=YOUR_PASSWORD_HERE"
+  }
+}
