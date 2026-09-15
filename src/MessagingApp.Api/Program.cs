@@ -1,4 +1,5 @@
 using System.Text;
+using MessagingApp.Api.ExceptionHandling;
 using MessagingApp.Application.Interfaces;
 using MessagingApp.Application.Services;
 using MessagingApp.Infrastructure.Persistence;
@@ -11,6 +12,8 @@ using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -62,6 +65,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
