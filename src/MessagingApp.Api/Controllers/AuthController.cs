@@ -1,4 +1,4 @@
-using System.IdentityModel.Tokens.Jwt;
+using MessagingApp.Api.Extensions;
 using MessagingApp.Application.DTOs;
 using MessagingApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -35,8 +35,7 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
-        var userId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
-        var result = await _authService.GetCurrentUserAsync(userId);
+        var result = await _authService.GetCurrentUserAsync(User.GetUserId());
         return Ok(result);
     }
 }

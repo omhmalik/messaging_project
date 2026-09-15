@@ -11,9 +11,13 @@ public class UnitOfWork : IUnitOfWork
     {
         _context = context;
         Users = new UserRepository(context);
+        Conversations = new ConversationRepository(context);
+        Messages = new MessageRepository(context);
     }
 
     public IUserRepository Users { get; }
+    public IConversationRepository Conversations { get; }
+    public IMessageRepository Messages { get; }
 
     public Task<int> SaveChangesAsync() => _context.SaveChangesAsync();
 }
