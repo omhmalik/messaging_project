@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SignalR Test Client</title>
+</head>
+<body>
+  <h3>SignalR Test Client</h3>
+  <p>Paste a JWT (from /api/Auth/login) for the user you want to receive notifications for.</p>
+  <input id="token" placeholder="JWT token" style="width:600px" />
+  <button onclick="connect()">Connect</button>
+  <pre id="log" style="white-space:pre-wrap;font-family:monospace;margin-top:10px;border:1px solid #ccc;padding:10px;"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.0/dist/browser/signalr.min.js"></script>
+  <script>
+    function log(msg) {
+      document.getElementById('log').textContent += new Date().toLocaleTimeString() + '  ' + msg + '\n';
+    }
+
+    async function connect() {
+      const token = document.getElementById('token').value.trim();
+      if (!token) { log('Paste a token first.'); return; }
+
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl('/hubs/chat?access_token=' + encodeURIComponent(token))
+        .withAutomaticReconnect()
+        .build();
+
+      connection.on('ReceiveMessage', (message) => {
+        log('ReceiveMessage: ' + JSON.stringify(message));
+      });
+
+      connection.onclose((err) => log('Connection closed. ' + (err || '')));
+
+      try {
+        await connection.start();
+        log('Connected. Waiting for messages sent to this user...');
+      } catch (err) {
+        log('Connection failed: ' + err);
+      }
+    }
+  </script>
+</body>
+</html>
